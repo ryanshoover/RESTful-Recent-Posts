@@ -29,40 +29,45 @@ class RESTful_Recent_Posts extends WP_Widget {
 	public function widget( $args, $instance ) {
 		// outputs the content of the widget
 
-		$json = wp_remote_get( 'http://wpaustin.com/wp-json/wp/v2/posts/?filter[posts_per_page]=10' );
+		$json = wp_remote_get( 'http://wpaustin.com/wp-json/wp/v2/posts/?filter[posts_per_page]=5' );
 
-		$body = $json['body'];
-
-		$results = json_decode($body, TRUE);
-		#var_dump($results);
-
-		if (is_wp_error($results)) {
+		if ( ! $json ) {
 			return;
 		}
 
-		// array of post objects returned from API GET request [title, url, excerpt, image]
+		$body = $json['body'];
 
-		echo "<ul>";
+		$results = json_decode( $body, true );
+
+		echo '<h3>WP Austin\'s Recent Posts';
+
+		echo '<ul>';
+
 		foreach ( $results as $result ) {
-			echo "<li>";
+			echo '<li>';
+
 			if ( $result['featured_media'] ) {
-				$imgurl="http://wpaustin.com/wp-json/wp/v2/media/" . $result['featured_media'];
+				$imgurl = "http://wpaustin.com/wp-json/wp/v2/media/{$result['featured_media']}";
 				$response = wp_remote_get( $imgurl );
-				$image_object = json_decode( $response['body'] );
 
-				$image_src_url = $image_object->guid->rendered;
+				if ( $response ) {
+					$image_object = json_decode( $response['body'] );
 
-				echo '<img src="' . $image_src_url .  '">';
+					echo '<img src="' . $image_object->guid->rendered .  '">';
+				}
 			}
 
 			//wrap url around title create href
 			echo '<a href="' . $result['link'] . '">' . $result['title']['rendered'] . '</a>';
+
 			echo $result['excerpt']['rendered'];
+
 			echo "</li>";
 		}
-		echo "</ul>";
 
+		echo "</ul>";
 	}
+}
 
 add_action( 'widgets_init', function(){
 	register_widget( 'RESTful_Recent_Posts' );
